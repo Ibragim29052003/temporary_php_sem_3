@@ -12,6 +12,8 @@ use App\Events\NewArticleEvent;
 use App\Notifications\NewArticleNotification;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Cache;
+
 
 class ArticleController extends Controller
 {
@@ -26,20 +28,45 @@ class ArticleController extends Controller
     //     return view('articles.index', compact('articles'));
     // }
 
-
-
-
-        public function index()
+    public function __construct()
     {
-        // Загружаем статьи с автором и количеством комментариев
-      $articles = Article::with('user')
-        ->withCount(['comments as comments_count' => function ($q) {
-            $q->where('is_approved', true);
-        }])
-        ->get();
+        // Только зарегистрированные пользователи могут создавать, редактировать и удалять статьи
+        $this->middleware('auth')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
+
+    public function index(Request $request)
+    {
+        // Проверка прав доступа: только модератор может видеть все статьи
+        if (auth()->check() && auth()->user()->isModerator()) {
+            $articles = Article::with('user')
+                ->withCount(['comments as comments_count' => function ($q) {
+                    $q->where('is_approved', true);
+                }])
+                ->get(); // показываем все статьи модератору
+        } else {
+            // Обычные пользователи не могут заходить напрямую на /articles
+            if (request()->routeIs('articles.index')) {
+                abort(403); // Forbidden
+            }
+
+            // Главная страница с пагинацией и кэшом
+            $page = $request->get('page', 1);
+            $cacheKey = 'articles_page_' . $page;
+
+            $articles = Cache::remember($cacheKey, 60*60, function () {
+                return Article::with('user')
+                    ->withCount(['comments as comments_count' => function ($q) {
+                        $q->where('is_approved', true);
+                    }])
+                    ->paginate(6); // лимит на страницу
+            });
+        }
 
         return view('articles.index', compact('articles'));
     }
+
+
 
 
     /**
@@ -85,6 +112,11 @@ class ArticleController extends Controller
             Notification::send($readers, new NewArticleNotification($article));
         }
 
+        // Очищаем кэш главной страницы и пагинации
+        for ($i = 1; $i <= 10; $i++) {
+            Cache::forget('articles_page_' . $i);
+        }
+
         // // Отправляем письмо модератору 8 ЛАБА
         // Mail::to(config('mail.moderator'))->send(new ArticleCreatedMail($article));
         
@@ -103,10 +135,12 @@ class ArticleController extends Controller
      */
     public function show(Article $article)
     {
-        // $article->load(['comments' => function ($query) {
-        //     $query->where('is_approved', true)->latest();
-        // }]);
-        $article->load(['user', 'approvedComments.user']); // подгружаем автора статьи и авторов комментариев
+        $cacheKey = 'article_' . $article->id;
+
+       // кэширование отдельной статьи с комментариями через теги
+        $article = Cache::rememberForever($cacheKey, function () use ($article) {
+            return $article->load(['user', 'approvedComments.user']);
+        });
 
         if (auth()->check()) {
             $notifications = auth()->user()
@@ -118,8 +152,6 @@ class ArticleController extends Controller
                 $notification->markAsRead();
             }
         }
-
-
         return view('articles.show', compact('article'));
     }
 
@@ -141,8 +173,24 @@ class ArticleController extends Controller
             'body'         => 'required|string',
             'published_at' => 'required|date',
         ]);
+        // Генерация секунд при редактировании
+        $publishedAt = \Carbon\Carbon::parse($request->published_at)
+            ->setSecond(rand(0, 59));
 
-        $article->update($validated);
+         // Обновляем статью
+        $article->update([
+            'title' => $request->title,
+            'body' => $request->body,
+            'published_at' => $publishedAt,
+        ]);
+
+        // Удаляем кэш страницы просмотра статьи
+        Cache::forget('article_' . $article->id);
+
+        // Удаляем кэш главной страницы и пагинации
+        for ($i = 1; $i <= 10; $i++) {
+            Cache::forget('articles_page_' . $i);
+        }
 
         return redirect()->route('articles.index')->with('success', 'Статья успешно обновлена!');
     }
@@ -153,12 +201,17 @@ class ArticleController extends Controller
     public function destroy(Article $article)
     {
         $article->delete();
+
+        // Удаляем кэш страницы статьи
+        Cache::forget('article_' . $article->id);
+
+        // Удаляем кэш главной страницы и пагинации
+        for ($i = 1; $i <= 10; $i++) {
+            Cache::forget('articles_page_' . $i);
+        }
+
         return redirect()->route('articles.index')->with('success', 'Статья успешно удалена!');
     }
+    
 
-    public function __construct()
-    {
-        // Только зарегистрированные пользователи могут создавать, редактировать и удалять статьи
-        $this->middleware('auth')->only(['create', 'store', 'edit', 'update', 'destroy']);
-    }
 }

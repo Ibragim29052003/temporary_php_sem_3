@@ -30,7 +30,10 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 @auth
                     {{-- Модераторы --}}
-                    @if(auth()->user()->isModerator())
+                    @if(auth()->user()?->isModerator())
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('articles.index') }}">Все статьи</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('articles.create') }}">Создать новость</a>
                         </li>
@@ -40,7 +43,7 @@
                     @endif
 
                     {{-- Обычные пользователи / читатели --}}
-                    @if(auth()->check() && !auth()->user()->isModerator())
+                    @if(auth()->check() && !auth()->user()?->isModerator())
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarNotifications" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">

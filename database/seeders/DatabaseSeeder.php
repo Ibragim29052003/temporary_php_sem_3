@@ -5,37 +5,42 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Article;
 use App\Models\Comment;
+use App\Models\User;
+use App\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Создаём администратора/модератора
-        \App\Models\User::firstOrCreate([
-            'email' => 'admin@example.com'
-        ], [
-            'name' => 'Администратор',
-            'password' => bcrypt('password'),
-        ]);
+        // Создаём роли
+        $moderator = Role::firstOrCreate(['name' => 'moderator']);
+        $reader    = Role::firstOrCreate(['name' => 'reader']);
 
-        // Импортируем статьи из JSON
+        // Создаём администратора/модератора
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Администратор',
+                'password' => bcrypt('password'),
+                'role_id' => $moderator->id,
+            ]
+        );
+
+        // Сидаем статьи
         $this->call([
-            RoleSeeder::class,
             ArticleSeeder::class,
         ]);
 
-        $admin = \App\Models\User::where('email', 'admin@example.com')->first();
-        if ($admin) {
-            $admin->role_id = \App\Models\Role::where('name', 'moderator')->first()->id;
-            $admin->save();
-        }
-
         $articles = Article::all();
 
-        // Создаём 30 комментариев и случайно распределяем их по существующим статьям
-        Comment::factory(30)->make()->each(function($comment) use ($articles) {
-            $comment->article_id = $articles->random()->id;
-            $comment->save();
-        });
+        if ($articles->count() > 0) {
+            // Создаём 30 комментариев, распределяем по статьям
+            Comment::factory(30)->make()->each(function ($comment) use ($articles, $admin) {
+                $comment->article_id = $articles->random()->id;
+                $comment->user_id = $admin->id;      // можно выбрать случайного пользователя, если есть
+                $comment->is_approved = true;        // сразу одобренные, чтобы отображались
+                $comment->save();
+            });
+        }
     }
 }
