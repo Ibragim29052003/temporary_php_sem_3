@@ -12,7 +12,10 @@
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h3><a href="{{ route('articles.show', $article) }}" class="text-decoration-none">{{ $article->title }}</a></h3>
-                        <p class="text-muted mb-2">Автор: {{ $article->user->name ?? 'Неизвестно' }}</p>
+                        <p class="text-muted mb-2">
+                            Автор: {{ $article->user->name ?? 'Неизвестно' }} |
+                            Опубликовано: {{ $article->published_at ? $article->published_at->format('d.m.Y H:i') : 'Не указано' }}
+                        </p>
                         <p>{{ Str::limit($article->body, 200) }}</p>
 
                         @can('update', $article)

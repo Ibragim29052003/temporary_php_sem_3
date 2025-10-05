@@ -28,7 +28,7 @@
 
         <div class="mb-3">
             <label for="published_at" class="form-label">Дата публикации</label>
-            <input type="date" name="published_at" id="published_at" class="form-control" value="{{ old('published_at') }}" required>
+            <input type="datetime-local" name="published_at" id="published_at" class="form-control" value="{{ old('published_at') }}" required>
         </div>
 
         <div class="d-flex justify-content-center gap-3">

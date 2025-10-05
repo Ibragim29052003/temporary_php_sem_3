@@ -15,7 +15,7 @@ class ArticleFactory extends Factory
             'title'        => fake()->sentence(),
             'body'         => fake()->paragraphs(3, true),
             'user_id'      => 1, // или rand(1, 10), если есть несколько пользователей
-            'published_at' => fake()->date(),
+            'published_at' => fake()->dateTimeBetween('-1 year', 'now'),
             'preview_image'=> 'placeholder_preview.png',
             'full_image'   => 'placeholder_full.png',
         ];

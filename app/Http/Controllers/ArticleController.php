@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Jobs\VeryLongJob;
 use App\Events\NewArticleEvent;
+use App\Notifications\NewArticleNotification;
+use App\Models\User;
+use Illuminate\Support\Facades\Notification;
 
 class ArticleController extends Controller
 {
@@ -58,17 +61,29 @@ class ArticleController extends Controller
             'published_at' => 'required|date',
         ]);
 
+        $publishedAt = \Carbon\Carbon::parse($request->published_at)
+            ->setSecond(rand(0, 59));
+
         $data = [
             'title'        => $request->title,
             'body'         => $request->body,
             'user_id'      => Auth::id(),
-            'published_at' => $request->published_at,
+            'published_at' => $publishedAt,
             // всегда ставим дефолтную картинку
             'preview_image'=> 'placeholder_preview.png',
             'full_image'   => 'placeholder_full.png',
         ];
 
         $article = Article::create($data);
+
+        // Берём всех читателей (role_id = 2), кроме автора статьи
+        $readers = User::where('role_id', 2)
+            ->where('id', '!=', Auth::id())
+            ->get();
+
+        if ($readers->isNotEmpty()) {
+            Notification::send($readers, new NewArticleNotification($article));
+        }
 
         // // Отправляем письмо модератору 8 ЛАБА
         // Mail::to(config('mail.moderator'))->send(new ArticleCreatedMail($article));
@@ -92,6 +107,19 @@ class ArticleController extends Controller
         //     $query->where('is_approved', true)->latest();
         // }]);
         $article->load(['user', 'approvedComments.user']); // подгружаем автора статьи и авторов комментариев
+
+        if (auth()->check()) {
+            $notifications = auth()->user()
+                ->unreadNotifications()
+                ->where('data->article_id', $article->id) // обращаемся к JSON-полю
+                ->get();
+
+            foreach ($notifications as $notification) {
+                $notification->markAsRead();
+            }
+        }
+
+
         return view('articles.show', compact('article'));
     }
 

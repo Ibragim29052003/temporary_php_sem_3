@@ -29,6 +29,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 @auth
+                    {{-- Модераторы --}}
                     @if(auth()->user()->isModerator())
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('articles.create') }}">Создать новость</a>
@@ -37,7 +38,38 @@
                             <a class="nav-link" href="{{ route('comments.pending') }}">Модерация</a>
                         </li>
                     @endif
+
+                    {{-- Обычные пользователи / читатели --}}
+                    @if(auth()->check() && !auth()->user()->isModerator())
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarNotifications" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                                Уведомления
+                                @if(auth()->user()->unreadNotifications->count() > 0)
+                                    <span class="badge bg-danger">
+                                        {{ auth()->user()->unreadNotifications->count() }}
+                                    </span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarNotifications">
+                                @forelse(auth()->user()->unreadNotifications as $notification)
+                                    <li>
+                                        <a class="dropdown-item" href="{{ $notification->data['preview_url'] }}">
+                                            {{ $notification->data['title'] }} <br>
+                                            <small>Опубликовано: {{ $notification->data['published_at'] }}</small><br>
+                                            <small>Автор: {{ $notification->data['author_name'] }}</small>
+                                        </a>
+                                    </li>
+                                @empty
+                                    <li><span class="dropdown-item">Нет новых уведомлений</span></li>
+                                @endforelse
+                            </ul>
+                        </li>
+                    @endif
+
                 @endauth
+
+                {{-- Остальные ссылки --}}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('about') }}">О нас</a>
                 </li>
@@ -46,6 +78,7 @@
                 </li>
             </ul>
 
+            {{-- Права доступа справа: Гость / Авторизованный --}}
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 @guest
                     <li class="nav-item"><a class="nav-link" href="{{ route('login.form') }}">Войти</a></li>
@@ -63,6 +96,8 @@
         </div>
     </div>
 </nav>
+
+
 
 <div class="container">
     @if(session('success'))
