@@ -566,6 +566,7 @@ class ComposerStaticInit96396abc30ebc98484705537c99ded7a
         'App\\Models\\Comment' => __DIR__ . '/../..' . '/app/Models/Comment.php',
         'App\\Models\\Role' => __DIR__ . '/../..' . '/app/Models/Role.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
+        'App\\Notifications\\NewArticleNotification' => __DIR__ . '/../..' . '/app/Notifications/NewArticleNotification.php',
         'App\\Policies\\ArticlePolicy' => __DIR__ . '/../..' . '/app/Policies/ArticlePolicy.php',
         'App\\Policies\\CommentPolicy' => __DIR__ . '/../..' . '/app/Policies/CommentPolicy.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',

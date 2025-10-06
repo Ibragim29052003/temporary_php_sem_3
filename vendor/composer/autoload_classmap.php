@@ -30,6 +30,7 @@ return array(
     'App\\Models\\Comment' => $baseDir . '/app/Models/Comment.php',
     'App\\Models\\Role' => $baseDir . '/app/Models/Role.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
+    'App\\Notifications\\NewArticleNotification' => $baseDir . '/app/Notifications/NewArticleNotification.php',
     'App\\Policies\\ArticlePolicy' => $baseDir . '/app/Policies/ArticlePolicy.php',
     'App\\Policies\\CommentPolicy' => $baseDir . '/app/Policies/CommentPolicy.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',

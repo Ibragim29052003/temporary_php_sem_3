@@ -32,6 +32,9 @@ class ArticleController extends Controller
     {
         // Только зарегистрированные пользователи могут создавать, редактировать и удалять статьи
         $this->middleware('auth')->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+        // Добавляем логирование просмотров только для show
+        $this->middleware('log.requests')->only('show');
     }
 
 

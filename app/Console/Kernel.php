@@ -19,9 +19,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Пример: запуск команды inspire каждый час
-        // $schedule->command('inspire')->hourly();
+        // Статистика за минуту
+        $schedule->command('stats:send')->everyMinute();
+
+        // Статистика за день
+        // $schedule->command('stats:send')->dailyAt('23:59');
     }
+
 
     /**
      * Register the commands for the application.

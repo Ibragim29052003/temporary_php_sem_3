@@ -42,7 +42,8 @@ class User extends Authenticatable
         'password' => 'hashed', // хэширование пароля автоматически
     ];
 
-    public function article(){
+    public function article()
+    {
         return $this->hasMany(Article::class);
     }
 
